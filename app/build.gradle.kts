@@ -10,8 +10,8 @@ android {
         applicationId = "com.bancusoft.pdfreader"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -43,6 +43,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     // Librării pentru PDF Reader
     implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
     implementation("androidx.viewpager2:viewpager2:1.1.0")
