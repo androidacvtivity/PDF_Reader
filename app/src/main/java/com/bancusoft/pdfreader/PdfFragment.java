@@ -1,5 +1,7 @@
 package com.bancusoft.pdfreader;
 
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
@@ -26,6 +28,7 @@ public class PdfFragment extends Fragment {
     private Context context;
     private PDFView pdfView;
     private int totalPages = 0;
+    private View highlightView;
     private final Map<Integer, String> pageTexts = new HashMap<>();
 
     public static PdfFragment newInstance(String filename) {
@@ -54,6 +57,7 @@ public class PdfFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_pdf, container, false);
+        highlightView = view.findViewById(R.id.highlightView);
         pdfView = view.findViewById(R.id.pdfView);
         loadPdf();
         return view;
@@ -97,20 +101,41 @@ public class PdfFragment extends Fragment {
         builder.setPositiveButton("Caută", (dialog, which) -> {
             String keyword = input.getText().toString().trim().toLowerCase();
             if (!keyword.isEmpty()) {
+                boolean found = false;
                 for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
                     if (entry.getValue().toLowerCase().contains(keyword)) {
+                        // Sari la pagina
                         pdfView.jumpTo(entry.getKey(), true);
-                        Toast.makeText(context, "Text găsit la pagina " + (entry.getKey() + 1), Toast.LENGTH_LONG).show();
-                        return;
+
+                        // Animație de puls și evidențiere
+                        if (highlightView != null) {
+                            Animation pulse = AnimationUtils.loadAnimation(context, R.anim.pulse);
+                            highlightView.startAnimation(pulse);
+                            highlightView.setVisibility(View.VISIBLE);
+
+                            highlightView.postDelayed(() -> {
+                                highlightView.clearAnimation();
+                                highlightView.setVisibility(View.GONE);
+                            }, 3000);
+                        }
+
+                        // Mesaj
+                        Toast.makeText(context, "📌 Text găsit la pagina " + (entry.getKey() + 1), Toast.LENGTH_SHORT).show();
+                        found = true;
+                        break;
                     }
                 }
-                Toast.makeText(context, "Textul nu a fost găsit.", Toast.LENGTH_LONG).show();
+                if (!found) {
+                    Toast.makeText(context, "❌ Textul nu a fost găsit.", Toast.LENGTH_LONG).show();
+                }
             }
         });
 
         builder.setNegativeButton("Anulează", (dialog, which) -> dialog.cancel());
         builder.show();
     }
+
+
 
     private void extractTextFromPdf() {
         try {

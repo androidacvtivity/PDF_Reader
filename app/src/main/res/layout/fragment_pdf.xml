@@ -3,8 +3,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- PDF-ul propriu-zis -->
     <com.github.barteksc.pdfviewer.PDFView
         android:id="@+id/pdfView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <!-- Evidențiere vizuală (cerc semi-transparent) -->
+    <View
+        android:id="@+id/highlightView"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="100dp"
+        android:background="#44FF0000"
+        android:visibility="gone" />
 </FrameLayout>
