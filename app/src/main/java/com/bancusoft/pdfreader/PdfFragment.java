@@ -1,25 +1,32 @@
 package com.bancusoft.pdfreader;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-
 import com.github.barteksc.pdfviewer.PDFView;
-
+import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
+import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PdfFragment extends Fragment {
-    private PDFView pdfView;
     private static final String ARG_FILENAME = "pdf_filename";
     private String pdfFilename;
     private Context context;
+    private PDFView pdfView;
+    private int totalPages = 0;
+    private final Map<Integer, String> pageTexts = new HashMap<>();
 
     public static PdfFragment newInstance(String filename) {
         PdfFragment fragment = new PdfFragment();
@@ -47,7 +54,8 @@ public class PdfFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_pdf, container, false);
-        pdfView = view.findViewById(R.id.pdfView); // păstrăm referința
+        pdfView = view.findViewById(R.id.pdfView);
+        loadPdf();
         return view;
     }
 
@@ -56,17 +64,69 @@ public class PdfFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (pdfView != null && pdfFilename != null) {
-            try {
-                InputStream inputStream = context.getAssets().open(pdfFilename);
-                pdfView.fromStream(inputStream)
-                        .spacing(10)
-                        .enableAnnotationRendering(true)
-                        .load();
-            } catch (Exception e) {
-                Toast.makeText(context, "Eroare la reîncărcarea fișierului PDF", Toast.LENGTH_SHORT).show();
-            }
+            loadPdf(); // reîncarcă PDF-ul când revii la tab
         }
     }
 
+
+    private void loadPdf() {
+        try {
+            InputStream inputStream = context.getAssets().open(pdfFilename);
+            pdfView.fromStream(inputStream)
+                    .spacing(10)
+                    .enableAnnotationRendering(true)
+                    .onLoad(nbPages -> {
+                        totalPages = nbPages;
+                        extractTextFromPdf();
+                    })
+                    .onPageChange((page, pageCount) -> {})
+                    .load();
+        } catch (Exception e) {
+            Toast.makeText(context, "Eroare la deschiderea fișierului PDF", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void showSearchDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Căutare text PDF");
+
+        final EditText input = new EditText(context);
+        input.setHint("Introdu textul căutat");
+        builder.setView(input);
+
+        builder.setPositiveButton("Caută", (dialog, which) -> {
+            String keyword = input.getText().toString().trim().toLowerCase();
+            if (!keyword.isEmpty()) {
+                for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
+                    if (entry.getValue().toLowerCase().contains(keyword)) {
+                        pdfView.jumpTo(entry.getKey(), true);
+                        Toast.makeText(context, "Text găsit la pagina " + (entry.getKey() + 1), Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
+                Toast.makeText(context, "Textul nu a fost găsit.", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        builder.setNegativeButton("Anulează", (dialog, which) -> dialog.cancel());
+        builder.show();
+    }
+
+    private void extractTextFromPdf() {
+        try {
+            InputStream is = context.getAssets().open(pdfFilename);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder fullText = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                fullText.append(line).append("\n");
+            }
+            pageTexts.clear();
+            pageTexts.put(0, fullText.toString()); // toată căutarea e într-o pagină logică 0
+            reader.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }

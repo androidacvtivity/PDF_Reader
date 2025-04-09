@@ -1,0 +1,1 @@
+https://raw.githubusercontent.com/TomRoush/PdfBox-Android/main/pdfbox/src/main/assets/com/tom_roush/pdfbox/resources/glyphlist/glyphlist.txt

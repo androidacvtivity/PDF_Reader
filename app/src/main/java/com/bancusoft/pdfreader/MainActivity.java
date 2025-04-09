@@ -2,6 +2,8 @@ package com.bancusoft.pdfreader;
 
 import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.widget.Button;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.tabs.TabLayout;
@@ -36,6 +38,14 @@ public class MainActivity extends AppCompatActivity {
                     tab.setText(cleanTitle);
                 }
         ).attach();
+
+        Button searchButton = findViewById(R.id.searchButton);
+        searchButton.setOnClickListener(v -> {
+            int currentItem = viewPager.getCurrentItem();
+            PdfFragment currentFragment = (PdfFragment) adapter.getFragment(currentItem);
+            currentFragment.showSearchDialog();
+        });
+
 
     }
 
