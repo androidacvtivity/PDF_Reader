@@ -28,6 +28,14 @@ public class MainActivity extends AppCompatActivity {
         adapter = new PdfPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
+        Button saveButton = findViewById(R.id.savePdfButton);
+        saveButton.setOnClickListener(v -> {
+            int currentItem = viewPager.getCurrentItem();
+            PdfFragment currentFragment = adapter.getFragment(currentItem);
+            currentFragment.savePdfToDownloads();
+        });
+
+
         // Încărcăm PDF-urile din assets
         loadPdfFromAssets();
 

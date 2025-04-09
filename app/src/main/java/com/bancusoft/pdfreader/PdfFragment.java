@@ -1,5 +1,6 @@
 package com.bancusoft.pdfreader;
 
+import android.os.Environment;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.app.AlertDialog;
@@ -17,8 +18,11 @@ import com.github.barteksc.pdfviewer.PDFView;
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +34,40 @@ public class PdfFragment extends Fragment {
     private int totalPages = 0;
     private View highlightView;
     private final Map<Integer, String> pageTexts = new HashMap<>();
+
+    public void savePdfToDownloads() {
+        try {
+            // Nume fișier
+            String outputFilename = pdfFilename;
+
+            // Deschide PDF din assets
+            InputStream in = context.getAssets().open(pdfFilename);
+
+            // Folderul Downloads
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File outFile = new File(downloadsDir, outputFilename);
+
+            OutputStream out = new FileOutputStream(outFile);
+
+            // Copiază fișierul
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+
+            in.close();
+            out.flush();
+            out.close();
+
+            Toast.makeText(context, "✅ PDF salvat în: " + outFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(context, "❌ Eroare la salvarea fișierului", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
 
     public static PdfFragment newInstance(String filename) {
         PdfFragment fragment = new PdfFragment();
@@ -77,8 +115,13 @@ public class PdfFragment extends Fragment {
         try {
             InputStream inputStream = context.getAssets().open(pdfFilename);
             pdfView.fromStream(inputStream)
-                    .spacing(10)
                     .enableAnnotationRendering(true)
+                    .enableAntialiasing(true)
+                    .enableDoubletap(true)
+                    .enableSwipe(true)
+                    .swipeHorizontal(false) // sau true dacă vrei pagini orizontale
+
+                    .spacing(10)
                     .onLoad(nbPages -> {
                         totalPages = nbPages;
                         extractTextFromPdf();
@@ -89,6 +132,7 @@ public class PdfFragment extends Fragment {
             Toast.makeText(context, "Eroare la deschiderea fișierului PDF", Toast.LENGTH_SHORT).show();
         }
     }
+
 
     public void showSearchDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
