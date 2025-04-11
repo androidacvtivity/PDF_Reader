@@ -3,6 +3,8 @@ package com.bancusoft.pdfreader;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.widget.Button;
+import com.bancusoft.pdfreader.TextHighlightFinder;
+import com.bancusoft.pdfreader.HighlightOverlayView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
@@ -27,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
         tabLayout = findViewById(R.id.tabLayout);
         adapter = new PdfPagerAdapter(this);
         viewPager.setAdapter(adapter);
+
+
+
 
         Button saveButton = findViewById(R.id.savePdfButton);
         saveButton.setOnClickListener(v -> {

@@ -1,11 +1,10 @@
 package com.bancusoft.pdfreader;
 
-import android.os.Environment;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.RectF;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,59 +14,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import com.github.barteksc.pdfviewer.PDFView;
-import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
-import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
-import java.io.BufferedReader;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.bancusoft.pdfreader.TextHighlightFinder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class PdfFragment extends Fragment {
     private static final String ARG_FILENAME = "pdf_filename";
     private String pdfFilename;
     private Context context;
     private PDFView pdfView;
-    private int totalPages = 0;
-    private View highlightView;
-    private final Map<Integer, String> pageTexts = new HashMap<>();
-
-    public void savePdfToDownloads() {
-        try {
-            // Nume fișier
-            String outputFilename = pdfFilename;
-
-            // Deschide PDF din assets
-            InputStream in = context.getAssets().open(pdfFilename);
-
-            // Folderul Downloads
-            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            File outFile = new File(downloadsDir, outputFilename);
-
-            OutputStream out = new FileOutputStream(outFile);
-
-            // Copiază fișierul
-            byte[] buffer = new byte[1024];
-            int read;
-            while ((read = in.read(buffer)) != -1) {
-                out.write(buffer, 0, read);
-            }
-
-            in.close();
-            out.flush();
-            out.close();
-
-            Toast.makeText(context, "✅ PDF salvat în: " + outFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(context, "❌ Eroare la salvarea fișierului", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-
+    private HighlightOverlayView highlightOverlay;
 
     public static PdfFragment newInstance(String filename) {
         PdfFragment fragment = new PdfFragment();
@@ -95,21 +55,19 @@ public class PdfFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_pdf, container, false);
-        highlightView = view.findViewById(R.id.highlightView);
         pdfView = view.findViewById(R.id.pdfView);
+        highlightOverlay = view.findViewById(R.id.highlightOverlay);
         loadPdf();
         return view;
     }
-
 
     @Override
     public void onResume() {
         super.onResume();
         if (pdfView != null && pdfFilename != null) {
-            loadPdf(); // reîncarcă PDF-ul când revii la tab
+            loadPdf();
         }
     }
-
 
     private void loadPdf() {
         try {
@@ -117,22 +75,13 @@ public class PdfFragment extends Fragment {
             pdfView.fromStream(inputStream)
                     .enableAnnotationRendering(true)
                     .enableAntialiasing(true)
-                    .enableDoubletap(true)
-                    .enableSwipe(true)
-                    .swipeHorizontal(false) // sau true dacă vrei pagini orizontale
-
                     .spacing(10)
-                    .onLoad(nbPages -> {
-                        totalPages = nbPages;
-                        extractTextFromPdf();
-                    })
-                    .onPageChange((page, pageCount) -> {})
+                    .onLoad(nbPages -> {})
                     .load();
         } catch (Exception e) {
             Toast.makeText(context, "Eroare la deschiderea fișierului PDF", Toast.LENGTH_SHORT).show();
         }
     }
-
 
     public void showSearchDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -145,32 +94,38 @@ public class PdfFragment extends Fragment {
         builder.setPositiveButton("Caută", (dialog, which) -> {
             String keyword = input.getText().toString().trim().toLowerCase();
             if (!keyword.isEmpty()) {
-                boolean found = false;
-                for (Map.Entry<Integer, String> entry : pageTexts.entrySet()) {
-                    if (entry.getValue().toLowerCase().contains(keyword)) {
-                        // Sari la pagina
-                        pdfView.jumpTo(entry.getKey(), true);
+                try {
+                    InputStream inputStream = context.getAssets().open(pdfFilename);
+                    PDDocument document = PDDocument.load(inputStream);
+                    TextHighlightFinder finder = new TextHighlightFinder(keyword);
+                    finder.setSortByPosition(true);
+                    finder.setStartPage(1);
+                    finder.setEndPage(document.getNumberOfPages());
+                    finder.getText(document);
+                    List<TextHighlightFinder.HighlightInfo> results = finder.getHighlights();
+                    document.close();
 
-                        // Animație de puls și evidențiere
-                        if (highlightView != null) {
-                            Animation pulse = AnimationUtils.loadAnimation(context, R.anim.pulse);
-                            highlightView.startAnimation(pulse);
-                            highlightView.setVisibility(View.VISIBLE);
+                    if (!results.isEmpty()) {
+                        TextHighlightFinder.HighlightInfo first = results.get(0);
+                        pdfView.jumpTo(first.page - 1, true);
 
-                            highlightView.postDelayed(() -> {
-                                highlightView.clearAnimation();
-                                highlightView.setVisibility(View.GONE);
-                            }, 3000);
-                        }
+                        RectF rect = new RectF(
+                                first.x,
+                                first.y,
+                                first.x + first.width,
+                                first.y + first.height
+                        );
+                        float zoom = pdfView.getZoom();
+                        highlightOverlay.setHighlight(rect, zoom);
+                        highlightOverlay.postDelayed(() -> highlightOverlay.clearHighlight(), 3000);
 
-                        // Mesaj
-                        Toast.makeText(context, "📌 Text găsit la pagina " + (entry.getKey() + 1), Toast.LENGTH_SHORT).show();
-                        found = true;
-                        break;
+                        Toast.makeText(context, "Text găsit la pagina " + first.page, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(context, "Textul nu a fost găsit.", Toast.LENGTH_LONG).show();
                     }
-                }
-                if (!found) {
-                    Toast.makeText(context, "❌ Textul nu a fost găsit.", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(context, "Eroare la căutare în PDF.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -179,23 +134,26 @@ public class PdfFragment extends Fragment {
         builder.show();
     }
 
-
-
-    private void extractTextFromPdf() {
+    public void savePdfToDownloads() {
         try {
-            InputStream is = context.getAssets().open(pdfFilename);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            StringBuilder fullText = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                fullText.append(line).append("\n");
+            InputStream in = context.getAssets().open(pdfFilename);
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File outFile = new File(downloadsDir, pdfFilename);
+
+            OutputStream out = new FileOutputStream(outFile);
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
             }
-            pageTexts.clear();
-            pageTexts.put(0, fullText.toString()); // toată căutarea e într-o pagină logică 0
-            reader.close();
+            in.close();
+            out.flush();
+            out.close();
+
+            Toast.makeText(context, "✅ PDF salvat în: " + outFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             e.printStackTrace();
+            Toast.makeText(context, "❌ Eroare la salvarea fișierului", Toast.LENGTH_SHORT).show();
         }
     }
-
 }

@@ -1,1 +1,20 @@
-Aceasta - PDFBox standalone	pdfbox-app-2.0.33.jar	?
+ Afișare pagini PDF	PdfRenderer → Bitmap
+🔍 Căutare text real	PdfBox-Android (fără afișare)
+🟨 Evidențiere text	Desenăm peste imagine (Canvas)
+🔎 Zoom + pan	PhotoView (zoom fluid, pan complet)
+
+Nimic nou
+Analizeaza din nou codul -
+
+Functionalitatea - Afișare pagini PDF	PdfRenderer
+
+1. Lateral nu merge- Imaginea nu este mare.
+2. Merge greu.
+
+
+Poate sa --
+1.Utilizează AsyncTask sau Coroutine pentru încărcare în fundal:
+
+Reducere dimensiune Bitmap:
+
+Folosește Bitmap.Config.RGB_565 în loc de ARGB_8888 pentru economie de memorie.
