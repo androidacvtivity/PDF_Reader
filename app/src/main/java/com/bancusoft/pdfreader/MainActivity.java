@@ -2,81 +2,58 @@ package com.bancusoft.pdfreader;
 
 import android.content.res.AssetManager;
 import android.os.Bundle;
-import android.widget.Button;
-import com.bancusoft.pdfreader.TextHighlightFinder;
-import com.bancusoft.pdfreader.HighlightOverlayView;
-
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ViewPager2 viewPager;
     private TabLayout tabLayout;
+    private ViewPager2 viewPager;
     private PdfPagerAdapter adapter;
-    private final List<String> pdfFiles = new ArrayList<>();
+    private List<String> pdfFiles = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        viewPager = findViewById(R.id.viewPager);
         tabLayout = findViewById(R.id.tabLayout);
+        viewPager = findViewById(R.id.viewPager);
+
         adapter = new PdfPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
+        loadPdfFilesFromAssets();
 
-
-
-        Button saveButton = findViewById(R.id.savePdfButton);
-        saveButton.setOnClickListener(v -> {
-            int currentItem = viewPager.getCurrentItem();
-            PdfFragment currentFragment = adapter.getFragment(currentItem);
-            currentFragment.savePdfToDownloads();
-        });
-
-
-        // Încărcăm PDF-urile din assets
-        loadPdfFromAssets();
-
-        new TabLayoutMediator(tabLayout, viewPager,
-                (tab, position) -> {
-                    String filename = pdfFiles.get(position);
-                    String cleanTitle = filename.replace(".pdf", "");
-                    tab.setText(cleanTitle);
-                }
+        new TabLayoutMediator(tabLayout, viewPager, (tab, position) ->
+                tab.setText(getPdfName(pdfFiles.get(position)))
         ).attach();
-
-        Button searchButton = findViewById(R.id.searchButton);
-        searchButton.setOnClickListener(v -> {
-            int currentItem = viewPager.getCurrentItem();
-            PdfFragment currentFragment = (PdfFragment) adapter.getFragment(currentItem);
-            currentFragment.showSearchDialog();
-        });
-
-
     }
 
-    private void loadPdfFromAssets() {
+    private void loadPdfFilesFromAssets() {
+        AssetManager assetManager = getAssets();
         try {
-            AssetManager assetManager = getAssets();
             String[] files = assetManager.list("");
-            if (files != null) {
-                for (String filename : files) {
-                    if (filename.endsWith(".pdf")) {
-                        pdfFiles.add(filename);
-                        adapter.addFragment(PdfFragment.newInstance(filename));
-                    }
+            for (String file : files) {
+                if (file.endsWith(".pdf")) {
+                    pdfFiles.add(file);
+                    adapter.addFragment(PdfViewerFragment.newInstance(file));
                 }
-                adapter.notifyDataSetChanged();
             }
-        } catch (Exception e) {
+            adapter.notifyDataSetChanged();
+        } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @NonNull
+    private String getPdfName(String filename) {
+        return filename.replace(".pdf", "");
     }
 }
