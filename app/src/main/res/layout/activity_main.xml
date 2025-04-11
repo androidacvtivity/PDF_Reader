@@ -6,38 +6,12 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- Bara de butoane sus -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp">
-
-
-
-        <Button
-            android:id="@+id/searchButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Caută text" />
-
-        <Button
-            android:id="@+id/savePdfButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Salvează PDF" />
-    </LinearLayout>
-
-    <!-- Taburi -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:tabMode="scrollable" />
 
-    <!-- ViewPager2 pentru paginile PDF -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="match_parent"

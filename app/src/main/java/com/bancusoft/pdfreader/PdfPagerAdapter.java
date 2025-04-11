@@ -10,18 +10,14 @@ import java.util.List;
 
 public class PdfPagerAdapter extends FragmentStateAdapter {
 
-    private final List<PdfFragment> fragments = new ArrayList<>();
+    private final List<Fragment> fragments = new ArrayList<>();
 
     public PdfPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);
     }
 
-    public void addFragment(PdfFragment fragment) {
+    public void addFragment(Fragment fragment) {
         fragments.add(fragment);
-    }
-
-    public PdfFragment getFragment(int position) {
-        return fragments.get(position);
     }
 
     @NonNull
