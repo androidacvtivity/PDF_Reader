@@ -23,6 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".PdfViewActivity">
+            <!-- Poți adăuga aici orice configurare necesară -->
+        </activity>
+
     </application>
 
 </manifest>
