@@ -5,9 +5,9 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- ListView pentru a afișa fișierele PDF -->
-    <ListView
-        android:id="@+id/listView"
+    <!-- PDFView pentru a vizualiza PDF-ul -->
+    <com.github.barteksc.pdfviewer.PDFView
+        android:id="@+id/pdfView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 </LinearLayout>
